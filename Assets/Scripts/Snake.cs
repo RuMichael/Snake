@@ -20,12 +20,12 @@ public class Snake : MonoBehaviour
     GameObject point;
 
     int score = 0;
-    float speedUp = 0;
+    float speedUp = 0;          //модификатор скорости передвижения змейки
     
     public Text scoreText;
     public Text snakeText;
 
-    float speed = 0.4f;
+    float speed = 0.4f;         //скорость движения змейки
     float speedTime = 0;
 
     void Start()
@@ -65,7 +65,7 @@ public class Snake : MonoBehaviour
         }
     }
 
-    void UpdateUI()
+    void UpdateUI()         //вывод на экран Счет и Кол-во ячеек змейки
     {
         scoreText.text = "Score: \n" + score.ToString();
         snakeText.text = "Snake: \n" + snakeFull.Count.ToString();
@@ -116,14 +116,14 @@ public class Snake : MonoBehaviour
 
     }
 
-    bool CheckMoveBackSnake(Vector3 pos)
+    bool CheckMoveBackSnake(Vector3 pos)            //проверяем не начали мы движение в противоположную сторону
     {
         if (snakeFull.First.Next.Value.transform.position.x == pos.x && snakeFull.First.Next.Value.transform.position.y == pos.y)        
             return true;
         return false;
     }
 
-    bool CheckValidSnake(Vector3 pos)
+    bool CheckValidSnake(Vector3 pos)           // проверяем является ли позиция частью змейки
     {
         foreach (var item in snakeFull)
         {
@@ -133,14 +133,14 @@ public class Snake : MonoBehaviour
         return true;
     }
 
-    bool CheckValidGrid(Vector3 pos)
+    bool CheckValidGrid(Vector3 pos)            //проверяем находится ли позиция на поле
     {
         if (pos.x>=0 && pos.x<=gridWeight && pos.y>=0 && pos.y<=gridHeight)
             return true;
         return false;
     }
 
-    bool CheckMoveOnPoint(Vector3 pos)
+    bool CheckMoveOnPoint(Vector3 pos)          //проверкяем позицию на соответствие Поинт по координатам
     {
         if (point.transform.position == pos)
         {
@@ -151,7 +151,7 @@ public class Snake : MonoBehaviour
         return false;
     }
 
-    void CreateNewPoint()
+    void CreateNewPoint()           //Создаем новый Поинт
     {
         Vector3 pos;
         do
@@ -167,14 +167,14 @@ public class Snake : MonoBehaviour
         return new Vector3(Random.Range(0, gridWeight), Random.Range(0, gridHeight), 0f);
     }
 
-    GameObject PopFirst()
+    GameObject PopFirst()           //забираем из змейки первый элемент
     {
         GameObject tmp = snakeFull.First.Value;
         snakeFull.RemoveFirst();
         return tmp;
-    }
+    }   
 
-    GameObject PopLast()
+    GameObject PopLast()            //забираем из змейки последний элемент
     {
         GameObject tmp = snakeFull.Last.Value;
         snakeFull.RemoveLast();
