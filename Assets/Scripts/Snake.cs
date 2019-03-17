@@ -6,18 +6,16 @@ using UnityEngine.UI;
 
 public class Snake : MonoBehaviour
 {
-    int gridWeight = 19, gridHeight = 14;
+    enum block { Head, Point, Snake }
 
-    Vector2 left = new Vector2(-1f, 0f);
-    Vector2 right = new Vector2(1f, 0f);
-    Vector2 up = new Vector2(0f, 1f);
-    Vector2 down = new Vector2(0f, -1f);
-    Vector2 direction;
-    Vector2 tmpDirection;
+    const int gridWeight = 19, gridHeight = 14;
 
-    LinkedList<GameObject> snakeFull = new LinkedList<GameObject>();
+    Vector3 direction;
+    Vector3 tmpDirection;
+    
+    LinkedList<Transform> snakeF = new LinkedList<Transform>();
 
-    GameObject point;
+    Transform pointPos;
 
     int score = 0;
     float speedUp = 0;          //модификатор скорости передвижения змейки
@@ -25,33 +23,48 @@ public class Snake : MonoBehaviour
     public Text scoreText;
     public Text snakeText;
 
-    float speed = 0.4f;         //скорость движения змейки
+    const float speed = 0.4f;         //скорость движения змейки
     float speedTime = 0;
 
     void Start()
-    {
-        direction = up;
-        tmpDirection = up;
+    {        
+        direction = Vector3.up;
+        tmpDirection = Vector3.up;
 
-        snakeFull.AddFirst((GameObject)Instantiate(Resources.Load("Prefabs/Head", typeof(GameObject)), new Vector3(10f, 4f, 0f), Quaternion.identity));        
-
-        snakeFull.AddLast((GameObject)Instantiate(Resources.Load("Prefabs/Snake", typeof(GameObject)), new Vector3(10f, 3f, 0f), Quaternion.identity));
-
-        snakeFull.AddLast((GameObject)Instantiate(Resources.Load("Prefabs/Snake", typeof(GameObject)), new Vector3(10f, 2f, 0f), Quaternion.identity));
-
-        snakeFull.AddLast((GameObject)Instantiate(Resources.Load("Prefabs/Snake", typeof(GameObject)), new Vector3(10f, 1f, 0f), Quaternion.identity));
+        snakeF.AddFirst(addBlock(block.Head, new Vector3(10f, 4f, 0f)));
+        snakeF.AddLast(addBlock(block.Snake, new Vector3(10f, 3f, 0f)));
+        snakeF.AddLast(addBlock(block.Snake, new Vector3(10f, 2f, 0f)));
+        snakeF.AddLast(addBlock(block.Snake, new Vector3(10f, 1f, 0f)));
 
         CreateNewPoint();
     }
 
+    Transform addBlock(block b, Vector3 pos)
+    {
+        GameObject gameTmp = null;
+        switch (b)
+        {
+            case (block.Head):
+                gameTmp = (GameObject)Instantiate(Resources.Load("Prefabs/Head", typeof(GameObject)), pos, Quaternion.identity);
+                break;
+            case (block.Snake):
+                gameTmp = (GameObject)Instantiate(Resources.Load("Prefabs/Snake", typeof(GameObject)), pos, Quaternion.identity);
+                break;
+            case (block.Point):
+                gameTmp = (GameObject)Instantiate(Resources.Load("Prefabs/Point", typeof(GameObject)), pos, Quaternion.identity);
+                break;
+        }
+
+        return gameTmp != null ? gameTmp.transform : null;
+    }
 
     void Update()
     {
         UpdateUI();
-        if (Input.GetKeyDown(KeyCode.LeftArrow)) direction = left;
-        else if (Input.GetKeyDown(KeyCode.RightArrow)) direction = right;
-        else if (Input.GetKeyDown(KeyCode.UpArrow)) direction = up;
-        else if (Input.GetKeyDown(KeyCode.DownArrow)) direction = down;
+        if (Input.GetKeyDown(KeyCode.LeftArrow)) direction = Vector3.left;
+        else if (Input.GetKeyDown(KeyCode.RightArrow)) direction = Vector3.right;
+        else if (Input.GetKeyDown(KeyCode.UpArrow)) direction = Vector3.up;
+        else if (Input.GetKeyDown(KeyCode.DownArrow)) direction = Vector3.down;
 
         if (Time.time - speedTime >= speed - speedUp)
         {
@@ -68,48 +81,47 @@ public class Snake : MonoBehaviour
     void UpdateUI()         //вывод на экран Счет и Кол-во ячеек змейки
     {
         scoreText.text = "Score: \n" + score.ToString();
-        snakeText.text = "Snake: \n" + snakeFull.Count.ToString();
+        snakeText.text = "Snake: \n" + snakeF.Count.ToString();
     }
 
     bool MoveSnake()
     {
-        GameObject first = PopFirst();
-        GameObject last = PopLast();
+        
+        Transform first = PopFirst();
+        Transform last = PopLast();
 
-        Vector3 lastPosition = last.transform.position;
+        Vector3 lastPosition = last.localPosition;
 
-        last.transform.position = first.transform.position;
-        snakeFull.AddFirst(last);
-        first.transform.position += (Vector3)direction;
+        last.localPosition = first.localPosition;
+        snakeF.AddFirst(last);
+        first.localPosition += direction;
 
-        if (CheckValidGrid(first.transform.position) && CheckValidSnake(first.transform.position))
+        if (CheckValidGrid(first.localPosition) && CheckValidSnake(first.localPosition))
         {
-            snakeFull.AddFirst(first);
-            if (CheckMoveOnPoint(first.transform.position))
+            snakeF.AddFirst(first);
+            if (CheckMoveOnPoint(first.localPosition))
             {
-                snakeFull.AddLast((GameObject)Instantiate(Resources.Load("Prefabs/Snake", typeof(GameObject)), lastPosition, Quaternion.identity));
+                snakeF.AddLast(addBlock(block.Snake, lastPosition));
                 score += 10;
             }
-                 
-            
         }
         else
         {
-            if (CheckMoveBackSnake(first.transform.position))
+            if (CheckMoveBackSnake(first.localPosition))
             {
-                first.transform.position -= (Vector3)direction;
-                first.transform.position -= (Vector3)direction;
-                snakeFull.AddFirst(first);
-                if (CheckMoveOnPoint(first.transform.position))
+                first.localPosition -= direction;
+                first.localPosition -= direction;
+                snakeF.AddFirst(first);
+                if (CheckMoveOnPoint(first.localPosition))
                 {
-                    snakeFull.AddLast((GameObject)Instantiate(Resources.Load("Prefabs/Snake", typeof(GameObject)), lastPosition, Quaternion.identity));
+                    snakeF.AddLast(addBlock(block.Snake, lastPosition));
                     score += 10;
                 }
                 
-                if (CheckValidGrid(first.transform.position))
+                if (CheckValidGrid(first.localPosition))
                     return false;
             }
-            Destroy(first);
+            Destroy(first.gameObject);
             GameOver();
         }
         return true;
@@ -118,16 +130,14 @@ public class Snake : MonoBehaviour
 
     bool CheckMoveBackSnake(Vector3 pos)            //проверяем не начали мы движение в противоположную сторону
     {
-        if (snakeFull.First.Next.Value.transform.position.x == pos.x && snakeFull.First.Next.Value.transform.position.y == pos.y)        
-            return true;
-        return false;
+        return snakeF.First.Next.Value.localPosition == pos;
     }
 
     bool CheckValidSnake(Vector3 pos)           // проверяем является ли позиция частью змейки
     {
-        foreach (var item in snakeFull)
+        foreach (var item in snakeF)
         {
-            if (item.transform.position == pos)
+            if (item.localPosition == pos)
                 return false;
         }
         return true;
@@ -135,16 +145,14 @@ public class Snake : MonoBehaviour
 
     bool CheckValidGrid(Vector3 pos)            //проверяем находится ли позиция на поле
     {
-        if (pos.x>=0 && pos.x<=gridWeight && pos.y>=0 && pos.y<=gridHeight)
-            return true;
-        return false;
+        return pos.x >= 0 && pos.x <= gridWeight && pos.y >= 0 && pos.y <= gridHeight;
     }
 
     bool CheckMoveOnPoint(Vector3 pos)          //проверкяем позицию на соответствие Поинт по координатам
     {
-        if (point.transform.position == pos)
+        if (pointPos.localPosition == pos)
         {
-            Destroy(point);
+            Destroy(pointPos.gameObject);
             CreateNewPoint();            
             return true;
         }
@@ -154,12 +162,14 @@ public class Snake : MonoBehaviour
     void CreateNewPoint()           //Создаем новый Поинт
     {
         Vector3 pos;
+        if (snakeF.Count == ((gridHeight + 1) * (gridWeight + 1) ))
+            return;
         do
         {
             pos = CreateRandomPosition();
         }
         while (!CheckValidSnake(pos));
-        point = (GameObject)Instantiate(Resources.Load("Prefabs/Point", typeof(GameObject)), pos, Quaternion.identity);
+        pointPos = addBlock(block.Point, pos);
     }
 
     Vector3 CreateRandomPosition()
@@ -167,26 +177,26 @@ public class Snake : MonoBehaviour
         return new Vector3(Random.Range(0, gridWeight), Random.Range(0, gridHeight), 0f);
     }
 
-    GameObject PopFirst()           //забираем из змейки первый элемент
+    Transform PopFirst()           //забираем из змейки первый элемент
     {
-        GameObject tmp = snakeFull.First.Value;
-        snakeFull.RemoveFirst();
+        Transform tmp = snakeF.First.Value;
+        snakeF.RemoveFirst();
         return tmp;
-    }   
+    }
 
-    GameObject PopLast()            //забираем из змейки последний элемент
+    Transform PopLast()            //забираем из змейки последний элемент
     {
-        GameObject tmp = snakeFull.Last.Value;
-        snakeFull.RemoveLast();
+        Transform tmp = snakeF.Last.Value;
+        snakeF.RemoveLast();
         return tmp;
     }
 
     void GameOver()
     {
-        foreach (var item in snakeFull)
-            Destroy(item);
+        foreach (var item in snakeF)
+            Destroy(item.gameObject);
         
-        Destroy(point);
+        Destroy(pointPos.gameObject);
         SceneManager.LoadScene("GameOver");
     }
 }
